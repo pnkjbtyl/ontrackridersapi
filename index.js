@@ -6,7 +6,7 @@ var vehicle=require('./controllers/vehicles');
 var index=require('./controllers/public');
 var authorization=require('./middleware/authorization');
 var files=require('./controllers/files');
-var file=require('./controllers/file');
+
 var app = express();
 
 app.use(bodyParser.urlencoded({extended:true}));
@@ -38,10 +38,9 @@ router.get('/', function(req,res,next){
 router.use('/',index);
 router.use('/users',authorization,users);
 router.use('/vehicles',authorization,vehicle);
-app.use('/users',authorization,files);
-app.use('/users',authorization,file);
+router.use('/files',authorization,files);
 
-app.use('/uploads',express.static(__dirname+'/controllers/uploads'));
+app.use('/uploads',express.static(__dirname+'./uploads'));
 app.use('/',router);
 app.use(function(req, res, next){
     var err= new Error('Endpoint not found');
@@ -55,4 +54,4 @@ app.use(function(err, req, res, next){
     })
 });
 
-app.listen(3000,'192.168.1.6');
+app.listen(3000,'192.168.1.11');

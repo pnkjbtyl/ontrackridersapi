@@ -10,11 +10,6 @@ var connection = require('../config');
 
 const tokenList={};
 
- 
-router.get('/p', function(req, res){
-   res.send('public.js file')
-});
-
 //================Rerfresh token======================//
 router.get('/refreshtoken',function(req,res){
   var refreshSecretKey = req.headers['refresh-token'];
@@ -184,11 +179,14 @@ router.post('/login',function(req,res,){
  
 })
 
-router.get("/files",function(req,res){
+router.get("/files/:offset?",function(req,res){
+
+  var offset = parseInt(req.params.offset) || 0;
+
   path=__dirname + "/uploads/" 
   //filen="http://192.168.1.6:3000/";
   //res.sendFile(path.join(__dirname + "/uploads/" + filename));
- connection.query('SELECT id,file_name,fs_name FROM rider_files ', function (error, data, fields) {
+ connection.query('SELECT id,file_name,fs_name FROM rider_files Limit ?, 10', [offset], function (error, data, fields) {
   if(error){
    res.status(400).json({
     message:"Error found " +error

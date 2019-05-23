@@ -164,5 +164,123 @@ router.get('/details/:id',function(req,res){
      
   })
  }
-}) 
+})
+
+//-------------------------------------------------------//
+//--------------------SET VEHICLE IMAGES-----------------------//
+//-------------------------------------------------------//
+router.get("/setvehiclepic/:ids",function(req,res){
+  var vehicleids=req.params.ids.split(",");
+  path=__dirname + "/uploads/" 
+  //filen="http://192.168.1.6:3000/";
+  //res.sendFile(path.join(__dirname + "/uploads/" + filename));
+ connection.query('SELECT * FROM rider_files WHERE id IN (?)',[vehicleids], function (error, vehicle_image, fields) {
+  if(error){
+   res.status(400).json({
+    message:"Error found " +error
+   })
+  }
+  
+  else{
+    if(vehicle_image[0].user_id==req.decoded.id){
+   if(vehicle_image.length){
+    connection.query('UPDATE rider_vehicles SET vehicle_image_ids =? WHERE user_id="'+req.decoded.id+'"',[vehicleids.join(',')], function (error, results, fields) {
+     if(error){
+      res.status(400).json({
+        message:error.message
+      }) 
+     }
+     else{ 
+       console.log(results)
+      res.status(200).json({
+        data:{
+          vehicle_image
+        },
+        message:"Photo addded successfully"
+      })
+     }
+    });
+   }
+   else{
+    res.status(403).json({
+     message:"No data found for this id."
+    });
+   }
+  }
+  else{
+    res.status(403).json({
+      message:'You are not authorized to access this data.'
+    })
+  } 
+  }  
+ });
+})
+
+//-------------------------------------------------------//
+//----------------------UPDATE VEHICLE---------------------//
+//-------------------------------------------------------//
+
+
+router.put('/update/:id',function(req,res){
+ userid=req.decoded.id;
+ vehicle_id=req.params.id;
+ var registration_no=req.body.registration_no;
+ var vehicles={ 
+   "user_id":userid,
+  "registrant_name":req.body.registrant_name,
+  "make":req.body.make,
+  "vehicle_type":req.body.vehicle_type,
+  "body_type":req.body.body_type,
+  "model":req.body.model,
+  "model_year":req.body.model_year,
+  "color":req.body.color,
+  "seat_capacity":req.body.seat_capacity,
+  "engine_cc":req.body.engine_cc,
+  "fuel_type":req.body.fuel_type,
+  "interior":req.body.interior,
+  "pets_allowed":req.body.pets_allowed,
+  "music_allowed":req.body.music_allowed,
+  "smoking_allowed":req.body.smoking_allowed 
+ }
+ if(!req.body.registrant_name ||  !req.body.make || !req.body.vehicle_type || !req.body.body_type ||
+  !req.body.model|| !req.body.model_year|| !req.body.color|| !req.body.seat_capacity|| !req.body.engine_cc
+  || !req.body.fuel_type || !req.body.interior || !req.body.pets_allowed|| !req.body.music_allowed || !req.body.smoking_allowed){
+  res.status(422).json({
+   message:"Please insert values for all fields",
+  })    
+ }else{
+   connection.query('SELECT * FROM rider_vehicles WHERE id =?',[vehicle_id],function(err,results,fields){
+    if(err)
+      res.status(400).json({ message : err.message})
+    if(results.length){
+      if(results[0].user_id==userid){
+       connection.query('UPDATE rider_vehicles SET ? WHERE id = "'+vehicle_id+'"',[vehicles],function (error,results,fields){
+        if (error) {
+         res.status(400).json({
+          message:'there is some error with query'+error
+         })
+        }
+        else{
+         res.status(200).json({
+          vehicles,
+          message:'Vehicle updated successfully',
+         })
+        }
+       });
+      }
+      else{
+       res.status(403).json({
+        message:'You are not authorized to modified this data.'
+       })
+      }
+    }
+    else{
+     res.status(400).json({
+      message:'No vehcile found for such id'
+     })
+    }
+   })
+  }
+})
+
 module.exports=router;
