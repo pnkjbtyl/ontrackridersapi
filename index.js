@@ -6,6 +6,7 @@ var vehicle=require('./controllers/vehicles');
 var index=require('./controllers/public');
 var authorization=require('./middleware/authorization');
 var files=require('./controllers/files');
+var map=require('./controllers/map');
 
 var app = express();
 
@@ -39,8 +40,9 @@ router.use('/',index);
 router.use('/users',authorization,users);
 router.use('/vehicles',authorization,vehicle);
 router.use('/files',authorization,files);
-
-app.use('/uploads',express.static(__dirname+'./uploads'));
+router.use('/',map);
+//app.use('/uploads',express.static(__dirname+'./uploads'));
+app.use('/',express.static('E:/NODE JS PPROJECTS/server/uploads/'));
 app.use('/',router);
 app.use(function(req, res, next){
     var err= new Error('Endpoint not found');
@@ -53,5 +55,5 @@ app.use(function(err, req, res, next){
         message: err.message
     })
 });
-
-app.listen(3000,'192.168.1.11');
+//app.listen(3000,'192.168.43.114');
+app.listen(3000,'192.168.1.14');

@@ -3,7 +3,7 @@ var formidable= require('express-formidable');
 var bodyParser=require('body-parser');
 var router = express.Router();
 var generator = require('generate-password');
-var connection = require('../config');
+var config = require('../config');
 
 
 
@@ -68,7 +68,7 @@ router.post('/add',function(req,res){
    message:"Please insert values for all fields",
   })    
  }else{
-   connection.query('SELECT * FROM rider_vehicles WHERE registration_no = ?',[registration_no],function (error,results,fields){
+   config.connection.query('SELECT * FROM rider_vehicles WHERE registration_no = ?',[registration_no],function (error,results,fields){
     if (error) {
      res.status(400).json({
       message:'there are some error with query'
@@ -82,7 +82,7 @@ router.post('/add',function(req,res){
      }
     }
     else{
-     connection.query('INSERT INTO rider_vehicles SET ?',vehicles, function (error, data, fields) {
+     config.connection.query('INSERT INTO rider_vehicles SET ?',vehicles, function (error, data, fields) {
       if (error) {
        console.log("Error"+ error);
        res.status(400).json({
@@ -108,7 +108,7 @@ router.post('/add',function(req,res){
 
 router.get('/:uid?',function(req,res){
 var user_id = req.params.uid || req.decoded.id;
- connection.query('SELECT id,registration_no,make,model,model_year FROM rider_vehicles WHERE user_id = ?',[user_id],function (error,results,fields){
+ config.connection.query('SELECT id,registration_no,make,model,model_year FROM rider_vehicles WHERE user_id = ?',[user_id],function (error,results,fields){
   if(error){
    res.status(400).json({
     message:"There is some error with the query"
@@ -144,7 +144,7 @@ router.get('/details/:id',function(req,res){
   })
  }
  else{
-  connection.query('SELECT * FROM rider_vehicles WHERE id = ?',[vehicle_id],function (error,results,fields){
+  config.connection.query('SELECT * FROM rider_vehicles WHERE id = ?',[vehicle_id],function (error,results,fields){
    if(error){
     res.status().json({
      message:"There is some error with the query"
@@ -174,7 +174,7 @@ router.get("/setvehiclepic/:ids",function(req,res){
   path=__dirname + "/uploads/" 
   //filen="http://192.168.1.6:3000/";
   //res.sendFile(path.join(__dirname + "/uploads/" + filename));
- connection.query('SELECT * FROM rider_files WHERE id IN (?)',[vehicleids], function (error, vehicle_image, fields) {
+ config.connection.query('SELECT * FROM rider_files WHERE id IN (?)',[vehicleids], function (error, vehicle_image, fields) {
   if(error){
    res.status(400).json({
     message:"Error found " +error
@@ -184,7 +184,7 @@ router.get("/setvehiclepic/:ids",function(req,res){
   else{
     if(vehicle_image[0].user_id==req.decoded.id){
    if(vehicle_image.length){
-    connection.query('UPDATE rider_vehicles SET vehicle_image_ids =? WHERE user_id="'+req.decoded.id+'"',[vehicleids.join(',')], function (error, results, fields) {
+    config.connection.query('UPDATE rider_vehicles SET vehicle_image_ids =? WHERE user_id="'+req.decoded.id+'"',[vehicleids.join(',')], function (error, results, fields) {
      if(error){
       res.status(400).json({
         message:error.message
@@ -249,12 +249,12 @@ router.put('/update/:id',function(req,res){
    message:"Please insert values for all fields",
   })    
  }else{
-   connection.query('SELECT * FROM rider_vehicles WHERE id =?',[vehicle_id],function(err,results,fields){
+   config.connection.query('SELECT * FROM rider_vehicles WHERE id =?',[vehicle_id],function(err,results,fields){
     if(err)
       res.status(400).json({ message : err.message})
     if(results.length){
       if(results[0].user_id==userid){
-       connection.query('UPDATE rider_vehicles SET ? WHERE id = "'+vehicle_id+'"',[vehicles],function (error,results,fields){
+       config.connection.query('UPDATE rider_vehicles SET ? WHERE id = "'+vehicle_id+'"',[vehicles],function (error,results,fields){
         if (error) {
          res.status(400).json({
           message:'there is some error with query'+error

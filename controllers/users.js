@@ -1,7 +1,7 @@
 var express=require("express");
 var bodyParser=require('body-parser');
 var router = express.Router();
-var connection = require('../config');
+var config = require('../config');
 var path=require('path');
 var multer=require('multer');
 var _=require('underscore');
@@ -37,6 +37,7 @@ router.put('/update',function(req,res){
    "spectacles":req.body.spectacles,
    "updated_at":date
   }
+  console.log(req.body);
   var email=req.decoded.email;
   if(!req.body.name || !req.body.age || !req.body.dob || !req.body.location || !req.body.driving_licence||
    !req.body.identification_no || !req.body.gender || !req.body.blood_group || !req.body.marital_status || !req.body.smoke ||
@@ -45,7 +46,7 @@ router.put('/update',function(req,res){
     message:"Please insert values for all fields",
    }) 
   }else{
-    connection.query('UPDATE rider_users SET ? WHERE email="'+email+'"',[update_details], function (error, results, fields) {
+    config.connection.query('UPDATE rider_users SET ? WHERE email="'+email+'"',[update_details], function (error, results, fields) {
      if (error) {
       console.log("Error"+ error);
       
@@ -71,7 +72,7 @@ router.get("/files/:uid?/:offset?",function(req,res){
   path=__dirname + "/uploads/" 
   //filen="http://192.168.1.6:3000/";
   //res.sendFile(path.join(__dirname + "/uploads/" + filename));
- connection.query('SELECT id,file_name,fs_name FROM rider_files WHERE user_id=? Limit ?, 10', [uid, offset], function (error, data, fields) {
+ config.connection.query('SELECT id,file_name,fs_name FROM rider_files WHERE user_id=? Limit ?, 10', [uid, offset], function (error, data, fields) {
   if(error){
    res.status(400).json({
     message:"Error found " +error
@@ -79,7 +80,7 @@ router.get("/files/:uid?/:offset?",function(req,res){
   }
   else{
    if(data.length){
-    connection.query('SELECT count(id) as total_records FROM rider_files', function (error, results, fields) {
+    config.connection.query('SELECT count(id) as total_records FROM rider_files', function (error, results, fields) {
       var total_records = results[0].total_records;
       res.status(200).json({
         data:{
@@ -106,8 +107,8 @@ router.get("/files/:uid?/:offset?",function(req,res){
 //-------------------------------------------------------//
 router.get('/:uid?',function(req,res){
  id=req.params.uid || req.decoded.id
- 
- connection.query('SELECT * FROM rider_users WHERE id = ?',[id],function (error, results, fields) {
+ console.log(req.decoded)
+ config.connection.query('SELECT * FROM rider_users WHERE id = ?',[id],function (error, results, fields) {
   if (error) {
    console.log(error)
    res.status(400).json({
@@ -116,10 +117,19 @@ router.get('/:uid?',function(req,res){
   }else if(results.length){
     delete results[0].salt;
     delete results[0].password;
-    res.status(200).json({
-     data:results[0],
-     message:"Success"
-    })
+    var profile_pic_id = results[0].profile_pic_id;
+    config.connection.query('SELECT * FROM rider_files WHERE id = ?',[profile_pic_id],function (error, files, fields) {
+      if(files.length){
+        files[0].profile_image_url = config.base_url+'/uploads/'+files[0].fs_name
+
+        results[0].profile_pic = files[0];
+      }else results[0].profile_pic = [];
+
+      res.status(200).json({
+        data:results[0],
+        message:"Success"
+      })
+    });
    }else{
      res.status(403).json({
       message:"User id doesn't exist"
@@ -156,18 +166,19 @@ router.post('/uploads', function (req, res){
 
   form.on('end', function (){
     _.each(form.filesdata, function(filejson, index, list){
-        connection.fileIds = [];
-        connection.query('INSERT INTO rider_files SET ?',[filejson], function (error, result, fields) {
-          connection.fileIds.push(result.insertId);
+        config.connection.fileIds = [];
+        config.connection.query('INSERT INTO rider_files SET ?',[filejson], function (error, result, fields) {
+          config.connection.fileIds.push(result.insertId);
           if(list.length == (index+1)){
             //Fetch files from DB and print result
-            connection.query('SELECT * FROM rider_files WHERE id IN (?)',[connection.fileIds],function(err,results,fields){
+            config.connection.query('SELECT * FROM rider_files WHERE id IN (?)',[config.connection.fileIds],function(err,results,fields){
               res.status(200).json({data:results, message: results.length+" records uploaded"}).end();
             });
           }
         });
     });
   });
+
 
   form.parse(req);
 });
@@ -178,11 +189,12 @@ router.post('/uploads', function (req, res){
 //---------------------------------------------//
 
 router.get("/setprofilepic/:id",function(req,res){
+
   profileid=req.params.id
-  path=__dirname + "/uploads/" 
+  path='192.168.1.14:3000/'
   //filen="http://192.168.1.6:3000/";
   //res.sendFile(path.join(__dirname + "/uploads/" + filename));
- connection.query('SELECT * FROM rider_files WHERE id = ?',profileid, function (error, profile_image, fields) {
+  config.connection.query('SELECT * FROM rider_files WHERE id = ?',profileid, function (error, profile_image, fields) {
   if(error){
    res.status(400).json({
     message:"Error found " +error
@@ -192,7 +204,7 @@ router.get("/setprofilepic/:id",function(req,res){
   else{
     if(profile_image[0].user_id==req.decoded.id){
    if(profile_image.length){
-    connection.query('UPDATE rider_users SET profile_pic_id=? WHERE id="'+req.decoded.id+'"',[profile_image[0].id], function (error, results, fields) {
+    config.connection.query('UPDATE rider_users SET profile_pic_id=? WHERE id="'+req.decoded.id+'"',[profile_image[0].id], function (error, results, fields) {
      if(error){
       res.status(400).json({
         message:error.message
@@ -203,6 +215,7 @@ router.get("/setprofilepic/:id",function(req,res){
         data:{
           profile_image
         },
+        image_url:path+profile_image[0].fs_name,
         message:"Profile photo updated successfully"
       })
      }

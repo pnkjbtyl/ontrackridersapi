@@ -8,9 +8,7 @@ var multer=require('multer');
 
 var fs=require('fs');
 
-var connection = require('../config');
-
-
+var config = require('../config');
 
 
 //-------------------------------------------------------//
@@ -26,10 +24,10 @@ router.get("/files",function(req,res){
       })
     }
   })
-  path=__dirname + "/uploads/" 
+  path=__dirname + "/uploads/"
   //filen="http://192.168.1.6:3000/";
   //res.sendFile(path.join(__dirname + "/uploads/" + filename));
- connection.query('SELECT id,file_name,fs_name FROM rider_files WHERE user_id = ?',[req.decoded.id], function (error, data, fields) {
+ config.connection.query('SELECT id,file_name,fs_name FROM rider_files WHERE user_id = ?',[req.decoded.id], function (error, data, fields) {
   if(error){
    res.status(400).json({
     message:"Error found " +error
